@@ -1,0 +1,156 @@
+$botToken = "XXX"
+$apiUrl = "https://api.telegram.org/bot$botToken"
+$updateId = 0
+$localUser = "Kevin"
+
+# Begrüßungsnachricht
+$message = $update.message
+$chatId = $message.chat.id
+$text = $message.text
+$responseText = "Bot gestartet. Verfügbare Befehle: `n 'Freiheit', 'Sperrzeit', '30 Minuten', '60 Minuten', 'Sofort', 'Abbrechen', 'Hilfe'"
+$sendMessageUrl = "$apiUrl/sendMessage?chat_id=527752008&text=$responseText"
+Invoke-RestMethod -Uri $sendMessageUrl
+
+
+while ($true) {
+    $updatesUrl = "$apiUrl/getUpdates?offset=$($updateId + 1)"
+    $updates = Invoke-RestMethod -Uri $updatesUrl
+
+    foreach ($update in $updates.result) {
+        $message = $update.message
+        $chatId = $message.chat.id
+        $text = $message.text
+
+        # Text2Speech Kommando ;-)
+        if ($text.StartsWith("Prank2")) {
+              # Senden Sie eine Antwort auf die Telegram-Nachricht
+              $responseText = "Ok! Der Prank mit deinem Text wird gestartet"
+              $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+              Invoke-RestMethod -Uri $sendMessageUrl
+              Add-Type -AssemblyName System.speech
+              $pranktext = ($text -split "Prank2", 2)[-1]
+              $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer
+              $speak.SelectVoice('Microsoft Zira Desktop')
+              $speak.Speak($pranktext)
+              # Die Variable $text auf "Nothing" setzen wegem dem switch-case
+              $text = "Nothing"
+            }
+
+
+        # Verwenden Sie eine Switch-Anweisung, um auf verschiedene Nachrichten zu reagieren
+        switch ($text) {
+            "Nothing" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                #$responseText = "Luis = Zeige die aktuellen Einstellungen von Benutzer Luis `n`nFreiheit = Entferne die zeitliche Begrenzung `n`nSperrzeit = Die übliche zeitliche Begrenzung aktivieren `n`nSofort = Der Rechner wird SOFORT heruntergefahren`n`n30 Minuten = Der Rechner wird in 30 Minuten heruntergefahren`n`n60 Minuten = Der Rechner wird in 60 Minuten heruntergefahren`n`nAbbrechen = Das Herunterfahren wird abgebrochen"
+                #$sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                #Invoke-RestMethod -Uri $sendMessageUrl
+            }
+            "Hilfe" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Luis = Zeige die aktuellen Einstellungen von Benutzer Luis `n`nFreiheit = Entferne die zeitliche Begrenzung `n`nSperrzeit = Die übliche zeitliche Begrenzung aktivieren `n`nSofort = Der Rechner wird SOFORT heruntergefahren`n`n30 Minuten = Der Rechner wird in 30 Minuten heruntergefahren`n`n60 Minuten = Der Rechner wird in 60 Minuten heruntergefahren`n`nAbbrechen = Das Herunterfahren wird abgebrochen"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+            }
+            "Luis" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Hier die Informationen zu dem Benutzer Luis"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                $output = Invoke-Expression 'net user $localUser' -ErrorAction SilentlyContinue -ErrorVariable errors
+                if ($errors.Count -eq 0) {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$output"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+                else {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$errors"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+
+            }
+            "Freiheit" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Die zeitliche Begrenzung für Luis wird abgeschaltet!"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                $output = Invoke-Expression 'net user $localUser /time:all' -ErrorAction SilentlyContinue -ErrorVariable errors
+                if ($errors.Count -eq 0) {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$output"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+                else {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$errors"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+
+            }
+            "Sperrzeit" {
+                $errors = $null
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Die zeitliche Begrenzung für Luis wird Werktags von 15 bis 20 Uhr gesetzt. Freitag und Samstag sind frei. Sonntag bis 20 Uhr begrenzt."
+                #$sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                $output = Invoke-Expression 'net user $localUser /time:"Montag-Donnerstag,15:00-20:00;Freitag-Samstag,00:00-00:00;Sonntag,00:00-20:00"' -ErrorAction SilentlyContinue -ErrorVariable errors
+                if ($errors.Count -eq 0) {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$output"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+                else {
+                    $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$errors"
+                    Invoke-RestMethod -Uri $sendMessageUrl
+                }
+            }
+            "30 Minuten" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Der Computer wird in 30 Minuten heruntergefahren"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                shutdown -s -t 1800
+            }
+            "60 Minuten" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Der Computer wird in 60 Minuten heruntergefahren"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                shutdown -s -t 3600
+            }
+            "Sofort" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Der Computer wird SOFORT heruntergefahren!"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                shutdown -s -t 5
+            }
+            "Abbrechen" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Der Computer wird nicht automatisch heruntergefahren"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                shutdown -a
+            }
+            "Prank" {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Ok! Der Prank wird gestartet"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+                Add-Type -AssemblyName System.speech
+                $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer
+                $speak.SelectVoice('Microsoft Zira Desktop')
+                $speak.Speak("Fuck me! Hey Kid!... I am a Computer! Help Computer!") 
+            }
+            default {
+                # Senden Sie eine Antwort auf die Telegram-Nachricht
+                $responseText = "Tut mir leid ... diesen Befehl kenne ich nicht. Gebe HILFE ein für eine Übersicht der Befehle"
+                $sendMessageUrl = "$apiUrl/sendMessage?chat_id=$chatId&text=$responseText"
+                Invoke-RestMethod -Uri $sendMessageUrl
+            }
+        }
+
+        # Aktualisieren Sie die Update-ID
+        $updateId = $update.update_id
+        # Errors leeren
+        $errors = $null
+    }
+}
+
+# Warten Sie 1 Sekunde, bevor Sie das nächste Update abrufen
+Start-Sleep -Seconds 1
